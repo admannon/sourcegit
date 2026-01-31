@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Text;
@@ -82,7 +83,7 @@ namespace SourceGit.Native
             // Example: C:\Users\... -> /mnt/c/Users/...
             if (windowsPath.Length >= 2 && windowsPath[1] == ':')
             {
-                var driveLetter = char.ToLower(windowsPath[0]);
+                var driveLetter = char.ToLower(windowsPath[0], CultureInfo.InvariantCulture);
                 var pathPart = windowsPath.Substring(2).Replace('\\', '/');
                 return $"/mnt/{driveLetter}{pathPart}";
             }
@@ -109,7 +110,7 @@ namespace SourceGit.Native
             // Convert /mnt/c/... style paths to C:\...
             if (wslPath.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase) && wslPath.Length > 6)
             {
-                var driveLetter = char.ToUpper(wslPath[5]);
+                var driveLetter = char.ToUpper(wslPath[5], CultureInfo.InvariantCulture);
                 var pathPart = wslPath.Substring(6).Replace('/', '\\');
                 return $"{driveLetter}:{pathPart}";
             }
