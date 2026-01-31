@@ -47,9 +47,10 @@ namespace SourceGit.Views
 
             var selected = await StorageProvider.OpenFilePickerAsync(options);
             if (selected.Count == 1 && DataContext is ViewModels.RepositoryConfigure vm)
+            {
                 vm.GitExecutableOverride = selected[0].Path.LocalPath;
-
-            e.Handled = true;
+                e.Handled = true;
+            }
         }
 
         private async void SelectExecutableForCustomAction(object sender, RoutedEventArgs e)
