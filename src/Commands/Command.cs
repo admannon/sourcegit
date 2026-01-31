@@ -32,6 +32,7 @@ namespace SourceGit.Commands
         public EditorType Editor { get; set; } = EditorType.CoreEditor;
         public string SSHKey { get; set; } = string.Empty;
         public string Args { get; set; } = string.Empty;
+        public Models.IRepository Repository { get; set; } = null;
 
         // Only used in `ExecAsync` mode.
         public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
@@ -161,8 +162,15 @@ namespace SourceGit.Commands
         {
             var start = new ProcessStartInfo();
             
+            // Determine which git executable to use - check repository override first
+            string gitExecutable = Native.OS.GitExecutable;
+            if (Repository?.Settings != null && !string.IsNullOrEmpty(Repository.Settings.GitExecutableOverride))
+            {
+                gitExecutable = Repository.Settings.GitExecutableOverride;
+            }
+            
             // Check if we're using WSL git on Windows
-            bool useWSL = OperatingSystem.IsWindows() && Native.OS.IsUsingWSLGit;
+            bool useWSL = OperatingSystem.IsWindows() && IsWSLGitExecutable(gitExecutable);
             string wslDistro = null;
             string wslWorkingDir = null;
 
@@ -171,7 +179,7 @@ namespace SourceGit.Commands
                 // Using WSL git - set up wsl.exe as the executable
                 start.FileName = "wsl.exe";
                 
-                var (distro, _) = Native.OS.GetWSLGitInfo();
+                var (distro, _) = ParseWSLGitInfo(gitExecutable);
                 wslDistro = distro;
 
                 // Convert working directory to WSL path format if needed
@@ -196,7 +204,7 @@ namespace SourceGit.Commands
             else
             {
                 // Using native git
-                start.FileName = Native.OS.GitExecutable;
+                start.FileName = gitExecutable;
             }
 
             start.UseShellExecute = false;
@@ -324,6 +332,24 @@ namespace SourceGit.Commands
         private class CapturedProcess
         {
             public Process Process { get; set; } = null;
+        }
+
+        private static bool IsWSLGitExecutable(string gitPath)
+        {
+            return !string.IsNullOrEmpty(gitPath) && gitPath.StartsWith("wsl:", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static (string distro, string gitPath) ParseWSLGitInfo(string gitExecutable)
+        {
+            if (string.IsNullOrEmpty(gitExecutable) || !gitExecutable.StartsWith("wsl:", StringComparison.OrdinalIgnoreCase))
+                return (null, null);
+
+            // Format: wsl:distro:/path/to/git
+            var parts = gitExecutable.Split(':', 3);
+            if (parts.Length == 3)
+                return (parts[1], parts[2]);
+
+            return (null, null);
         }
 
         [GeneratedRegex(@"\d+%")]

@@ -2,6 +2,8 @@
 {
     public interface IRepository
     {
+        RepositorySettings Settings { get; }
+
         bool MayHaveSubmodules();
 
         void RefreshBranches();

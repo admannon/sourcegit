@@ -231,6 +231,9 @@
   <x:String x:Key="Text.Configure.Git.AutoFetchIntervalSuffix" xml:space="preserve">Minute(s)</x:String>
   <x:String x:Key="Text.Configure.Git.ConventionalTypesOverride" xml:space="preserve">Conventional Commit Types</x:String>
   <x:String x:Key="Text.Configure.Git.DefaultRemote" xml:space="preserve">Default Remote</x:String>
+  <x:String x:Key="Text.Configure.Git.EffectiveGitExecutable.Tip" xml:space="preserve">This is the git executable that will be used for this repository</x:String>
+  <x:String x:Key="Text.Configure.Git.GitExecutableOverride" xml:space="preserve">Git Executable (Override)</x:String>
+  <x:String x:Key="Text.Configure.Git.GitExecutableOverride.Placeholder" xml:space="preserve">Leave empty to use global setting</x:String>
   <x:String x:Key="Text.Configure.Git.PreferredMergeMode" xml:space="preserve">Preferred Merge Mode</x:String>
   <x:String x:Key="Text.Configure.IssueTracker" xml:space="preserve">ISSUE TRACKER</x:String>
   <x:String x:Key="Text.Configure.IssueTracker.AddSampleAzure" xml:space="preserve">Add Azure DevOps Rule</x:String>
