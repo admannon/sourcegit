@@ -682,8 +682,13 @@ namespace SourceGit.ViewModels
                 var wslGit = Native.WSL.FindGitExecutable(_wslDistribution);
                 if (!string.IsNullOrEmpty(wslGit))
                 {
+                    // Determine distribution name
+                    var distro = !string.IsNullOrEmpty(_wslDistribution) ? _wslDistribution : Native.WSL.DefaultDistro;
+                    if (string.IsNullOrEmpty(distro))
+                        distro = "Ubuntu"; // Fallback to Ubuntu if no distribution is found
+                    
                     // Store marker that indicates we're using WSL git
-                    GitInstallPath = $"wsl:{_wslDistribution ?? Native.WSL.DefaultDistro}:{wslGit}";
+                    GitInstallPath = $"wsl:{distro}:{wslGit}";
                     return;
                 }
             }

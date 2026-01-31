@@ -256,12 +256,19 @@ namespace SourceGit.Native
                     var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                     if (lines.Length > 0)
                     {
-                        // Clean up the distribution name (remove default marker and whitespace)
+                        // Clean up the distribution name
                         var distro = lines[0].Trim();
-                        distro = distro.Replace("(Default)", "").Trim();
-                        // Remove any null characters that might appear
+                        
+                        // Remove default markers - these can be localized or in different formats
+                        // Common formats: "(Default)", "* ", "(par défaut)", etc.
+                        distro = REG_DEFAULT_MARKER().Replace(distro, "").Trim();
+                        
+                        // Remove any null characters or special characters
                         distro = distro.Replace("\0", "");
-                        return distro;
+                        
+                        // Return only if we have a valid name left
+                        if (!string.IsNullOrWhiteSpace(distro))
+                            return distro;
                     }
                 }
             }
@@ -272,6 +279,9 @@ namespace SourceGit.Native
 
             return null;
         }
+
+        [GeneratedRegex(@"^[\*\s]*\(.*?\)[\*\s]*", RegexOptions.IgnoreCase)]
+        private static partial Regex REG_DEFAULT_MARKER();
 
         [GeneratedRegex(@"^\\\\wsl[\.$]\\([^\\]+)\\(.*)$", RegexOptions.IgnoreCase)]
         private static partial Regex REG_WSL_PATH();
