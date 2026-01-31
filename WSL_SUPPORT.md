@@ -8,6 +8,7 @@ SourceGit now supports using Git from WSL, allowing you to:
 - Work with repositories stored in the WSL filesystem
 - Use the Git executable from your WSL distribution
 - Access both Windows and WSL repositories from the same application
+- Configure WSL Git globally or per-repository
 
 ## Prerequisites
 
@@ -34,7 +35,7 @@ Verify Git is installed:
 git --version
 ```
 
-### 2. Enable WSL Support in SourceGit
+### 2. Enable WSL Support in SourceGit (Global)
 
 1. Open SourceGit
 2. Go to **Preferences** (click the gear icon or use `Ctrl+Shift+P`)
@@ -44,6 +45,8 @@ git --version
    - Leave empty to use your default WSL distribution
    - Common names: `Ubuntu`, `Ubuntu-22.04`, `Debian`, etc.
 6. Click **Save**
+
+**Note:** This sets WSL Git as the default for all repositories. See [Per-Repository Configuration](#per-repository-configuration) for more granular control.
 
 ## Usage
 
@@ -156,6 +159,22 @@ wsl.exe -d Ubuntu cd '/home/username/repo' && git --no-pager status
 4. **Credential Storage**:
    - Use Git credential helpers in WSL for storing credentials
    - Example: `git config --global credential.helper store`
+
+## Per-Repository Configuration
+
+Instead of enabling WSL globally, you can configure Git executable on a per-repository basis. This is useful when you have a mix of Windows and WSL repositories.
+
+### Using Per-Repository Settings
+
+1. Open the repository in SourceGit
+2. Click **⚙️ Configure** (or Repository → Configure)
+3. In the **GIT** tab, find **"Git Executable (Override)"**
+4. Enter the WSL git path in format: `wsl:Ubuntu:/usr/bin/git`
+5. Click **OK**
+
+This repository will now use WSL Git, while other repositories use the global setting (which could be Windows Git).
+
+**See [PER_REPOSITORY_GIT.md](PER_REPOSITORY_GIT.md) for complete documentation on per-repository configuration.**
 
 ## Known Limitations
 
