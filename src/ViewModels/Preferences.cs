@@ -337,6 +337,38 @@ namespace SourceGit.ViewModels
             set => SetProperty(ref _gitDefaultCloneDir, value);
         }
 
+        public bool EnableWSL
+        {
+            get => _enableWSL;
+            set
+            {
+                if (SetProperty(ref _enableWSL, value) && !_isLoading)
+                {
+                    if (OperatingSystem.IsWindows())
+                    {
+                        PrepareGit();
+                        OnPropertyChanged(nameof(GitInstallPath));
+                    }
+                }
+            }
+        }
+
+        public string WSLDistribution
+        {
+            get => _wslDistribution;
+            set
+            {
+                if (SetProperty(ref _wslDistribution, value) && !_isLoading)
+                {
+                    if (OperatingSystem.IsWindows() && _enableWSL)
+                    {
+                        PrepareGit();
+                        OnPropertyChanged(nameof(GitInstallPath));
+                    }
+                }
+            }
+        }
+
         public bool UseLibsecretInsteadOfGCM
         {
             get => Native.OS.CredentialHelper.Equals("libsecret", StringComparison.Ordinal);
@@ -644,6 +676,18 @@ namespace SourceGit.ViewModels
 
         private void PrepareGit()
         {
+            // If WSL is enabled on Windows, try to use WSL git
+            if (OperatingSystem.IsWindows() && _enableWSL && Native.WSL.IsAvailable)
+            {
+                var wslGit = Native.WSL.FindGitExecutable(_wslDistribution);
+                if (!string.IsNullOrEmpty(wslGit))
+                {
+                    // Store marker that indicates we're using WSL git
+                    GitInstallPath = $"wsl:{_wslDistribution ?? Native.WSL.DefaultDistro}:{wslGit}";
+                    return;
+                }
+            }
+
             var path = Native.OS.GitExecutable;
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 GitInstallPath = Native.OS.FindGitExecutable();
@@ -810,6 +854,8 @@ namespace SourceGit.ViewModels
         private Models.ChangeViewMode _stashChangeViewMode = Models.ChangeViewMode.List;
 
         private string _gitDefaultCloneDir = string.Empty;
+        private bool _enableWSL = false;
+        private string _wslDistribution = string.Empty;
         private int _shellOrTerminalType = -1;
         private uint _statisticsSampleColor = 0xFF00FF00;
     }

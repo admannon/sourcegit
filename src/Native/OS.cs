@@ -112,6 +112,30 @@ namespace SourceGit.Native
             set => _enableSystemWindowFrame = value;
         }
 
+        public static bool IsUsingWSLGit
+        {
+            get
+            {
+                if (!OperatingSystem.IsWindows())
+                    return false;
+
+                return !string.IsNullOrEmpty(_gitExecutable) && _gitExecutable.StartsWith("wsl:", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        public static (string distro, string gitPath) GetWSLGitInfo()
+        {
+            if (!IsUsingWSLGit)
+                return (null, null);
+
+            // Format: wsl:distro:/path/to/git
+            var parts = _gitExecutable.Split(':', 3);
+            if (parts.Length == 3)
+                return (parts[1], parts[2]);
+
+            return (null, null);
+        }
+
         static OS()
         {
             if (OperatingSystem.IsWindows())
@@ -272,7 +296,35 @@ namespace SourceGit.Native
 
         private static void UpdateGitVersion()
         {
-            if (string.IsNullOrEmpty(_gitExecutable) || !File.Exists(_gitExecutable))
+            if (string.IsNullOrEmpty(_gitExecutable))
+            {
+                GitVersionString = string.Empty;
+                GitVersion = new Version(0, 0, 0);
+                return;
+            }
+
+            // Handle WSL git
+            if (OperatingSystem.IsWindows() && IsUsingWSLGit)
+            {
+                var (distro, _) = GetWSLGitInfo();
+                var version = WSL.GetGitVersion(distro);
+                if (!string.IsNullOrEmpty(version))
+                {
+                    GitVersionString = version.Trim();
+                    var match = REG_GIT_VERSION().Match(GitVersionString);
+                    if (match.Success)
+                    {
+                        var major = int.Parse(match.Groups[1].Value);
+                        var minor = int.Parse(match.Groups[2].Value);
+                        var build = int.Parse(match.Groups[3].Value);
+                        GitVersion = new Version(major, minor, build);
+                        GitVersionString = GitVersionString.Substring(11).Trim();
+                    }
+                }
+                return;
+            }
+
+            if (!File.Exists(_gitExecutable))
             {
                 GitVersionString = string.Empty;
                 GitVersion = new Version(0, 0, 0);

@@ -159,7 +159,45 @@ namespace SourceGit.Commands
         protected ProcessStartInfo CreateGitStartInfo(bool redirect)
         {
             var start = new ProcessStartInfo();
-            start.FileName = Native.OS.GitExecutable;
+            
+            // Check if we're using WSL git on Windows
+            bool useWSL = OperatingSystem.IsWindows() && Native.OS.IsUsingWSLGit;
+            string wslDistro = null;
+            string wslWorkingDir = null;
+
+            if (useWSL)
+            {
+                // Using WSL git - set up wsl.exe as the executable
+                start.FileName = "wsl.exe";
+                
+                var (distro, _) = Native.OS.GetWSLGitInfo();
+                wslDistro = distro;
+
+                // Convert working directory to WSL path format if needed
+                if (!string.IsNullOrEmpty(WorkingDirectory))
+                {
+                    if (Native.WSL.IsWSLPath(WorkingDirectory))
+                    {
+                        // Already a WSL path, convert to Linux format
+                        wslWorkingDir = Native.WSL.ConvertWindowsPathToWSL(WorkingDirectory, distro);
+                    }
+                    else if (Path.IsPathRooted(WorkingDirectory))
+                    {
+                        // Windows path, convert to WSL path
+                        wslWorkingDir = Native.WSL.ConvertWindowsPathToWSL(WorkingDirectory, distro);
+                    }
+                    else
+                    {
+                        wslWorkingDir = WorkingDirectory;
+                    }
+                }
+            }
+            else
+            {
+                // Using native git
+                start.FileName = Native.OS.GitExecutable;
+            }
+
             start.UseShellExecute = false;
             start.CreateNoWindow = true;
 
@@ -173,7 +211,18 @@ namespace SourceGit.Commands
 
             // Force using this app as SSH askpass program
             var selfExecFile = Process.GetCurrentProcess().MainModule!.FileName;
-            start.Environment.Add("SSH_ASKPASS", selfExecFile); // Can not use parameter here, because it invoked by SSH with `exec`
+            
+            if (useWSL)
+            {
+                // For WSL, we need to convert the Windows path to WSL path
+                var selfExecFileWSL = Native.WSL.ConvertWindowsPathToWSL(selfExecFile, wslDistro);
+                start.Environment.Add("SSH_ASKPASS", selfExecFileWSL);
+            }
+            else
+            {
+                start.Environment.Add("SSH_ASKPASS", selfExecFile);
+            }
+            
             start.Environment.Add("SSH_ASKPASS_REQUIRE", "prefer");
             start.Environment.Add("SOURCEGIT_LAUNCH_AS_ASKPASS", "TRUE");
             if (!OperatingSystem.IsLinux())
@@ -181,16 +230,38 @@ namespace SourceGit.Commands
 
             // If an SSH private key was provided, sets the environment.
             if (!start.Environment.ContainsKey("GIT_SSH_COMMAND") && !string.IsNullOrEmpty(SSHKey))
-                start.Environment.Add("GIT_SSH_COMMAND", $"ssh -i '{SSHKey}' -F '/dev/null'");
+            {
+                var sshKey = SSHKey;
+                if (useWSL)
+                {
+                    // Convert SSH key path to WSL format
+                    sshKey = Native.WSL.ConvertWindowsPathToWSL(SSHKey, wslDistro);
+                }
+                start.Environment.Add("GIT_SSH_COMMAND", $"ssh -i '{sshKey}' -F '/dev/null'");
+            }
 
             // Force using en_US.UTF-8 locale
-            if (OperatingSystem.IsLinux())
+            if (OperatingSystem.IsLinux() || useWSL)
             {
                 start.Environment.Add("LANG", "C");
                 start.Environment.Add("LC_ALL", "C");
             }
 
             var builder = new StringBuilder(2048);
+            
+            if (useWSL)
+            {
+                // Build WSL command
+                if (!string.IsNullOrEmpty(wslDistro))
+                    builder.Append($"-d {wslDistro} ");
+                
+                // Change directory and run git
+                if (!string.IsNullOrEmpty(wslWorkingDir))
+                    builder.Append($"cd '{wslWorkingDir}' && ");
+                
+                builder.Append("git ");
+            }
+
             builder
                 .Append("--no-pager -c core.quotepath=off -c credential.helper=")
                 .Append(Native.OS.CredentialHelper)
@@ -199,10 +270,16 @@ namespace SourceGit.Commands
             switch (Editor)
             {
                 case EditorType.CoreEditor:
-                    builder.Append($"""-c core.editor="\"{selfExecFile}\" --core-editor" """);
+                    var coreEditor = selfExecFile;
+                    if (useWSL)
+                        coreEditor = Native.WSL.ConvertWindowsPathToWSL(selfExecFile, wslDistro);
+                    builder.Append($"""-c core.editor="\"{coreEditor}\" --core-editor" """);
                     break;
                 case EditorType.RebaseEditor:
-                    builder.Append($"""-c core.editor="\"{selfExecFile}\" --rebase-message-editor" -c sequence.editor="\"{selfExecFile}\" --rebase-todo-editor" -c rebase.abbreviateCommands=true """);
+                    var rebaseEditor = selfExecFile;
+                    if (useWSL)
+                        rebaseEditor = Native.WSL.ConvertWindowsPathToWSL(selfExecFile, wslDistro);
+                    builder.Append($"""-c core.editor="\"{rebaseEditor}\" --rebase-message-editor" -c sequence.editor="\"{rebaseEditor}\" --rebase-todo-editor" -c rebase.abbreviateCommands=true """);
                     break;
                 default:
                     builder.Append("-c core.editor=true ");
@@ -213,7 +290,7 @@ namespace SourceGit.Commands
             start.Arguments = builder.ToString();
 
             // Working directory
-            if (!string.IsNullOrEmpty(WorkingDirectory))
+            if (!useWSL && !string.IsNullOrEmpty(WorkingDirectory))
                 start.WorkingDirectory = WorkingDirectory;
 
             return start;
