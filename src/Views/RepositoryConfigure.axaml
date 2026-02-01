@@ -44,7 +44,7 @@
           <TextBlock Classes="tab_header" Text="{DynamicResource Text.Configure.Git}"/>
         </TabItem.Header>
 
-        <Grid Margin="16,4,16,8" RowDefinitions="32,32,32,32,32,32,32,32,32,32,32,32" ColumnDefinitions="Auto,*">
+        <Grid Margin="16,4,16,8" RowDefinitions="32,32,32,32,32,32,32,32,32,32,32,32,32,32" ColumnDefinitions="Auto,*">
           <TextBlock Grid.Row="0" Grid.Column="0"
                      HorizontalAlignment="Right" VerticalAlignment="Center"
                      Margin="0,0,8,0"
@@ -162,26 +162,52 @@
             </TextBox.InnerRightContent>
           </TextBox>
 
-          <CheckBox Grid.Row="7" Grid.Column="1"
+          <TextBlock Grid.Row="7" Grid.Column="0"
+                     Text="{DynamicResource Text.Configure.Git.GitExecutableOverride}"
+                     HorizontalAlignment="Right"
+                     Margin="0,0,8,0"/>
+          <Grid Grid.Row="7" Grid.Column="1" ColumnDefinitions="*,Auto">
+            <TextBox Grid.Column="0"
+                     Height="28"
+                     CornerRadius="3"
+                     Watermark="{DynamicResource Text.Configure.Git.GitExecutableOverride.Placeholder}"
+                     Text="{Binding GitExecutableOverride, Mode=TwoWay}">
+              <TextBox.InnerRightContent>
+                <Button Classes="icon_button" Width="30" Height="30" Click="SelectGitExecutable">
+                  <Path Data="{StaticResource Icons.Folder.Open}" Fill="{DynamicResource Brush.FG1}"/>
+                </Button>
+              </TextBox.InnerRightContent>
+            </TextBox>
+            <TextBlock Grid.Column="1"
+                       Margin="8,0,0,0"
+                       VerticalAlignment="Center"
+                       FontFamily="{DynamicResource Fonts.Monospace}"
+                       FontSize="11"
+                       Foreground="{DynamicResource Brush.FG2}"
+                       Text="{Binding EffectiveGitExecutable}"
+                       ToolTip.Tip="{DynamicResource Text.Configure.Git.EffectiveGitExecutable.Tip}"/>
+          </Grid>
+
+          <CheckBox Grid.Row="8" Grid.Column="1"
                     Content="{DynamicResource Text.Preferences.GPG.CommitEnabled}"
                     IsChecked="{Binding GPGCommitSigningEnabled, Mode=TwoWay}"
                     ToolTip.Tip="commit.gpgsign=true"/>
 
-          <CheckBox Grid.Row="8" Grid.Column="1"
+          <CheckBox Grid.Row="9" Grid.Column="1"
                     Content="{DynamicResource Text.Preferences.GPG.TagEnabled}"
                     IsChecked="{Binding GPGTagSigningEnabled, Mode=TwoWay}"
                     ToolTip.Tip="tag.gpgsign=true"/>
 
-          <CheckBox Grid.Row="9" Grid.Column="1"
+          <CheckBox Grid.Row="10" Grid.Column="1"
                     Content="{DynamicResource Text.Preferences.Git.EnablePruneOnFetch}"
                     IsChecked="{Binding EnablePruneOnFetch, Mode=TwoWay}"
                     ToolTip.Tip="fetch.prune=true"/>
 
-          <CheckBox Grid.Row="10" Grid.Column="1"
+          <CheckBox Grid.Row="11" Grid.Column="1"
                     Content="{DynamicResource Text.Configure.Git.AskBeforeAutoUpdatingSubmodules}"
                     IsChecked="{Binding AskBeforeAutoUpdatingSubmodules, Mode=TwoWay}"/>
 
-          <StackPanel Grid.Row="11" Grid.Column="1" Orientation="Horizontal">
+          <StackPanel Grid.Row="12" Grid.Column="1" Orientation="Horizontal">
             <CheckBox x:Name="AutoFetchCheckBox"
                       Content="{DynamicResource Text.Configure.Git.AutoFetch}"
                       IsChecked="{Binding EnableAutoFetch, Mode=TwoWay}"/>

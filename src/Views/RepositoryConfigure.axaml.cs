@@ -36,6 +36,23 @@ namespace SourceGit.Views
             e.Handled = true;
         }
 
+        private async void SelectGitExecutable(object sender, RoutedEventArgs e)
+        {
+            var patterns = OperatingSystem.IsWindows() ? new[] { "git.exe", "*.exe" } : new[] { "*" };
+            var options = new FilePickerOpenOptions()
+            {
+                FileTypeFilter = [new FilePickerFileType("Git Executable") { Patterns = patterns }],
+                AllowMultiple = false,
+            };
+
+            var selected = await StorageProvider.OpenFilePickerAsync(options);
+            if (selected.Count == 1 && DataContext is ViewModels.RepositoryConfigure vm)
+            {
+                vm.GitExecutableOverride = selected[0].Path.LocalPath;
+                e.Handled = true;
+            }
+        }
+
         private async void SelectExecutableForCustomAction(object sender, RoutedEventArgs e)
         {
             var options = new FilePickerOpenOptions()

@@ -89,6 +89,30 @@ namespace SourceGit.ViewModels
             }
         }
 
+        public string GitExecutableOverride
+        {
+            get => _repo.Settings.GitExecutableOverride;
+            set
+            {
+                if (_repo.Settings.GitExecutableOverride != value)
+                {
+                    _repo.Settings.GitExecutableOverride = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(EffectiveGitExecutable));
+                }
+            }
+        }
+
+        public string EffectiveGitExecutable
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(_repo.Settings.GitExecutableOverride))
+                    return _repo.Settings.GitExecutableOverride;
+                return Native.OS.GitExecutable;
+            }
+        }
+
         public bool EnablePruneOnFetch
         {
             get;

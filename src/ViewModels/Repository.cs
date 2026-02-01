@@ -1912,6 +1912,12 @@ namespace SourceGit.ViewModels
             log?.Complete();
         }
 
+        public T ConfigureCommand<T>(T cmd) where T : Commands.Command
+        {
+            cmd.Repository = this;
+            return cmd;
+        }
+
         private readonly bool _isWorktree = false;
         private readonly string _gitCommonDir = null;
         private Models.RepositorySettings _settings = null;

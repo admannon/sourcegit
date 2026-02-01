@@ -233,6 +233,12 @@ namespace SourceGit.Models
             set;
         } = string.Empty;
 
+        public string GitExecutableOverride
+        {
+            get;
+            set;
+        } = string.Empty;
+
         public void PushCommitMessage(string message)
         {
             message = message.Trim().ReplaceLineEndings("\n");
