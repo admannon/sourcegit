@@ -66,7 +66,7 @@ namespace SourceGit.ViewModels
             set
             {
                 if (SetProperty(ref _defaultFontFamily, value) && !_isLoading)
-                    App.SetFonts(value, _monospaceFontFamily);
+                    App.SetFonts(value, _monospaceFontFamily, _fontFallback);
             }
         }
 
@@ -76,7 +76,17 @@ namespace SourceGit.ViewModels
             set
             {
                 if (SetProperty(ref _monospaceFontFamily, value) && !_isLoading)
-                    App.SetFonts(_defaultFontFamily, value);
+                    App.SetFonts(_defaultFontFamily, value, _fontFallback);
+            }
+        }
+
+        public string FontFallback
+        {
+            get => _fontFallback;
+            set
+            {
+                if (SetProperty(ref _fontFallback, value) && !_isLoading)
+                    App.SetFonts(_defaultFontFamily, _monospaceFontFamily, value);
             }
         }
 
@@ -761,6 +771,7 @@ namespace SourceGit.ViewModels
         private string _themeOverrides = string.Empty;
         private string _defaultFontFamily = string.Empty;
         private string _monospaceFontFamily = string.Empty;
+        private string _fontFallback = string.Empty;
         private double _defaultFontSize = 13;
         private double _editorFontSize = 13;
         private int _editorTabWidth = 4;

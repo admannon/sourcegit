@@ -299,7 +299,7 @@ namespace SourceGit
             }
         }
 
-        public static void SetFonts(string defaultFont, string monospaceFont)
+        public static void SetFonts(string defaultFont, string monospaceFont, string fallbackFont)
         {
             if (Current is not App app)
                 return;
@@ -312,23 +312,39 @@ namespace SourceGit
 
             defaultFont = app.FixFontFamilyName(defaultFont);
             monospaceFont = app.FixFontFamilyName(monospaceFont);
+            fallbackFont = app.FixFontFamilyName(fallbackFont);
 
             var resDic = new ResourceDictionary();
             if (!string.IsNullOrEmpty(defaultFont))
-                resDic.Add("Fonts.Default", new FontFamily(defaultFont));
+            {
+                var resolved = defaultFont;
+                if (!string.IsNullOrEmpty(fallbackFont))
+                    resolved += $",{fallbackFont}";
+                resDic.Add("Fonts.Default", new FontFamily(resolved));
+            }
+            else if (!string.IsNullOrEmpty(fallbackFont))
+            {
+                resDic.Add("Fonts.Default", new FontFamily($"fonts:Inter#Inter,{fallbackFont}"));
+            }
 
             if (string.IsNullOrEmpty(monospaceFont))
             {
-                if (!string.IsNullOrEmpty(defaultFont))
+                if (!string.IsNullOrEmpty(defaultFont) || !string.IsNullOrEmpty(fallbackFont))
                 {
-                    monospaceFont = $"fonts:SourceGit#JetBrains Mono,{defaultFont}";
+                    monospaceFont = "fonts:SourceGit#JetBrains Mono";
+                    if (!string.IsNullOrEmpty(defaultFont))
+                        monospaceFont += $",{defaultFont}";
+                    if (!string.IsNullOrEmpty(fallbackFont))
+                        monospaceFont += $",{fallbackFont}";
                     resDic.Add("Fonts.Monospace", FontFamily.Parse(monospaceFont));
                 }
             }
             else
             {
                 if (!string.IsNullOrEmpty(defaultFont) && !monospaceFont.Contains(defaultFont, StringComparison.Ordinal))
-                    monospaceFont = $"{monospaceFont},{defaultFont}";
+                    monospaceFont += $",{defaultFont}";
+                if (!string.IsNullOrEmpty(fallbackFont) && !monospaceFont.Contains(fallbackFont, StringComparison.Ordinal))
+                    monospaceFont += $",{fallbackFont}";
 
                 resDic.Add("Fonts.Monospace", FontFamily.Parse(monospaceFont));
             }
@@ -407,7 +423,7 @@ namespace SourceGit
 
             SetLocale(pref.Locale);
             SetTheme(pref.Theme, pref.ThemeOverrides);
-            SetFonts(pref.DefaultFontFamily, pref.MonospaceFontFamily);
+            SetFonts(pref.DefaultFontFamily, pref.MonospaceFontFamily, pref.FontFallback);
         }
 
         public override void OnFrameworkInitializationCompleted()
